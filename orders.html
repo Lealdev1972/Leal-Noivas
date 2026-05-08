@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Meus Pedidos</title>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:Arial,Helvetica,sans-serif;
+background:#f5f5f5;
+padding:30px;
+color:#222;
+}
+
+.container{
+max-width:1100px;
+margin:auto;
+}
+
+.topo{
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:15px;
+flex-wrap:wrap;
+margin-bottom:25px;
+}
+
+h1{
+font-size:32px;
+}
+
+.menu{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+}
+
+.menu a{
+text-decoration:none;
+background:#111;
+color:#fff;
+padding:10px 16px;
+border-radius:8px;
+font-size:14px;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(340px,1fr));
+gap:18px;
+}
+
+.card{
+background:#fff;
+border-radius:14px;
+padding:20px;
+box-shadow:0 6px 18px rgba(0,0,0,.08);
+}
+
+.numero{
+font-size:24px;
+font-weight:bold;
+margin-bottom:12px;
+}
+
+.info{
+font-size:15px;
+margin-bottom:7px;
+color:#444;
+}
+
+.total{
+font-size:24px;
+font-weight:bold;
+margin-top:15px;
+}
+
+.status{
+display:inline-block;
+margin-top:12px;
+padding:8px 12px;
+border-radius:999px;
+background:#111;
+color:#fff;
+font-size:13px;
+}
+
+.vazio{
+background:#fff;
+padding:30px;
+border-radius:14px;
+text-align:center;
+box-shadow:0 6px 18px rgba(0,0,0,.08);
+}
+
+.msg{
+position:fixed;
+top:20px;
+right:20px;
+background:#111;
+color:#fff;
+padding:12px 16px;
+border-radius:10px;
+display:none;
+z-index:999;
+font-size:14px;
+}
+
+@media(max-width:700px){
+
+body{
+padding:15px;
+}
+
+h1{
+font-size:26px;
+}
+
+.grid{
+grid-template-columns:1fr;
+}
+
+}
+</style>
+</head>
+<body>
+
+<div class="msg" id="msg"></div>
+
+<div class="container">
+
+<div class="topo">
+
+<h1>Meus Pedidos</h1>
+
+<div class="menu">
+<a href="/">Loja</a>
+<a href="/cart.html">Carrinho</a>
+<a href="/logout">Sair</a>
+</div>
+
+</div>
+
+<div id="lista"></div>
+
+</div>
+
+<script>
+
+async function iniciar(){
+await carregarPedidos();
+}
+
+async function carregarPedidos(){
+
+try{
+
+const res = await fetch("/orders");
+
+if(res.status === 401){
+location.href = "/login.html";
+return;
+}
+
+const pedidos = await res.json();
+
+const box = document.getElementById("lista");
+box.innerHTML = "";
+
+if(!Array.isArray(pedidos) || pedidos.length === 0){
+
+box.innerHTML = `
+<div class="vazio">
+Você ainda não possui pedidos.
+</div>
+`;
+
+return;
+}
+
+let html = `<div class="grid">`;
+
+pedidos.forEach(item=>{
+
+html += `
+
+<div class="card">
+
+<div class="numero">
+Pedido #${item.id}
+</div>
+
+<div class="info">
+<strong>Data:</strong>
+${formatarData(item.created_at)}
+</div>
+
+<div class="info">
+<strong>Status:</strong>
+${item.status}
+</div>
+
+<div class="total">
+R$ ${Number(item.total).toFixed(2)}
+</div>
+
+<div class="status">
+${item.status}
+</div>
+
+</div>
+
+`;
+
+});
+
+html += `</div>`;
+
+box.innerHTML = html;
+
+}catch(e){
+
+mostrar("Erro ao carregar pedidos");
+
+}
+
+}
+
+function formatarData(data){
+
+const d = new Date(data);
+
+return d.toLocaleDateString("pt-BR") + " " +
+d.toLocaleTimeString("pt-BR");
+
+}
+
+function mostrar(txt){
+
+const msg = document.getElementById("msg");
+
+msg.innerText = txt;
+msg.style.display = "block";
+
+setTimeout(()=>{
+msg.style.display = "none";
+},2500);
+
+}
+
+iniciar();
+
+</script>
+
+</body>
+</html>

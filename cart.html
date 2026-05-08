@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,initial-scale=1.0">
+
+<title>Carrinho Premium</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:Arial,Helvetica,sans-serif;
+background:#f5f5f5;
+}
+
+/* ======================================================
+HEADER
+====================================================== */
+
+header{
+background:#111;
+color:#fff;
+padding:18px 24px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+flex-wrap:wrap;
+gap:12px;
+}
+
+.logo{
+font-size:28px;
+font-weight:800;
+}
+
+nav{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+}
+
+nav a{
+border:none;
+text-decoration:none;
+background:#222;
+color:#fff;
+padding:10px 14px;
+border-radius:10px;
+font-size:14px;
+font-weight:700;
+cursor:pointer;
+transition:.2s;
+}
+
+nav a:hover{
+background:#fff;
+color:#111;
+}
+
+.hidden{
+display:none!important;
+}
+
+/* ======================================================
+CONTAINER
+====================================================== */
+
+.container{
+width:95%;
+max-width:1200px;
+margin:auto;
+padding:30px 0;
+}
+
+.card{
+background:#fff;
+border-radius:12px;
+padding:20px;
+margin-bottom:20px;
+box-shadow:0 4px 12px rgba(0,0,0,.08);
+}
+
+/* ======================================================
+ITEM
+====================================================== */
+
+.item{
+display:grid;
+grid-template-columns:120px 1fr 180px;
+gap:20px;
+align-items:center;
+}
+
+.item img{
+width:120px;
+height:120px;
+object-fit:cover;
+border-radius:10px;
+background:#eee;
+}
+
+.name{
+font-size:22px;
+font-weight:bold;
+margin-bottom:8px;
+}
+
+.desc{
+color:#666;
+margin-bottom:8px;
+}
+
+.tipo{
+display:inline-block;
+padding:6px 12px;
+border-radius:20px;
+font-size:13px;
+color:#fff;
+}
+
+.buy{
+background:#0b7d2b;
+}
+
+.rent{
+background:#c48b00;
+}
+
+.price{
+font-size:24px;
+font-weight:bold;
+color:#111;
+}
+
+.remove{
+background:#d90000;
+color:#fff;
+border:none;
+padding:10px 16px;
+border-radius:8px;
+cursor:pointer;
+margin-top:10px;
+}
+
+/* ======================================================
+SUMMARY
+====================================================== */
+
+.summary{
+background:#111;
+color:#fff;
+}
+
+.summary h2{
+margin-top:0;
+margin-bottom:20px;
+}
+
+.row{
+margin-bottom:15px;
+}
+
+input{
+width:100%;
+padding:12px;
+border-radius:8px;
+border:1px solid #ccc;
+box-sizing:border-box;
+}
+
+button.checkout{
+width:100%;
+padding:16px;
+border:none;
+background:#0b7d2b;
+color:#fff;
+font-size:18px;
+border-radius:10px;
+cursor:pointer;
+transition:.2s;
+}
+
+button.checkout:hover{
+background:#095e20;
+}
+
+.empty{
+text-align:center;
+font-size:22px;
+color:#666;
+padding:40px;
+}
+
+.total{
+font-size:28px;
+font-weight:bold;
+}
+
+/* ======================================================
+RESPONSIVO
+====================================================== */
+
+@media(max-width:800px){
+
+.item{
+grid-template-columns:1fr;
+}
+
+.item img{
+width:100%;
+height:240px;
+}
+
+}
+
+</style>
+</head>
+<body>
+
+<!-- ======================================================
+HEADER
+====================================================== -->
+
+<header>
+
+<div class="logo">
+Leal Noivas
+</div>
+
+<nav id="menu">
+
+<a href="/">
+🏠 Loja
+</a>
+
+<a href="/orders.html">
+📦 Pedidos
+</a>
+
+<a href="/cart.html">
+🛒 Carrinho
+</a>
+
+<a href="/login.html"
+id="btnLogin">
+🔐 Login
+</a>
+
+<a href="/logout"
+id="btnLogout"
+class="hidden">
+🚪 Sair
+</a>
+
+<a href="/dashboard.html"
+id="btnDash"
+class="hidden">
+📊 Dashboard
+</a>
+
+<a href="/financeiro.html"
+id="btnFin"
+class="hidden">
+💰 Financeiro
+</a>
+
+</nav>
+
+</header>
+
+<!-- ======================================================
+CONTAINER
+====================================================== -->
+
+<div class="container">
+
+<div id="cart-list"></div>
+
+<div class="card summary">
+
+<h2>
+Finalizar Pedido
+</h2>
+
+<div id="rent-area"
+style="display:none">
+
+<div class="row">
+
+<label>
+Data Inicial
+</label>
+
+<input
+type="date"
+id="start_date">
+
+</div>
+
+<div class="row">
+
+<label>
+Data Final
+</label>
+
+<input
+type="date"
+id="end_date">
+
+</div>
+
+</div>
+
+<div class="row">
+
+Total:
+
+<div class="total"
+id="total">
+
+R$ 0,00
+
+</div>
+
+</div>
+
+<button
+type="button"
+class="checkout"
+onclick="checkout()">
+
+Finalizar Pedido
+
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+let cart = [];
+
+/* ======================================================
+USUÁRIO
+====================================================== */
+
+async function carregarUsuario(){
+
+try{
+
+const req = await fetch("/me",{
+credentials:"include"
+});
+
+const usuario = await req.json();
+
+if(usuario){
+
+document
+.getElementById("btnLogin")
+.classList.add("hidden");
+
+document
+.getElementById("btnLogout")
+.classList.remove("hidden");
+
+if(usuario.role === "admin"){
+
+document
+.getElementById("btnDash")
+.classList.remove("hidden");
+
+document
+.getElementById("btnFin")
+.classList.remove("hidden");
+
+}
+
+}
+
+}catch(e){
+
+console.error(e);
+
+}
+
+}
+
+/* ======================================================
+CARRINHO
+====================================================== */
+
+async function loadCart(){
+
+try{
+
+const res = await fetch("/cart",{
+credentials:"include"
+});
+
+cart = await res.json();
+
+const box =
+document.getElementById("cart-list");
+
+const totalBox =
+document.getElementById("total");
+
+const rentArea =
+document.getElementById("rent-area");
+
+box.innerHTML = "";
+
+if(!Array.isArray(cart) || !cart.length){
+
+box.innerHTML = `
+<div class="card empty">
+Carrinho vazio
+</div>
+`;
+
+totalBox.innerText = "R$ 0,00";
+
+return;
+
+}
+
+let total = 0;
+let hasRent = false;
+
+cart.forEach(item=>{
+
+const subtotal =
+Number(item.price || 0) *
+Number(item.quantity || 0);
+
+total += subtotal;
+
+if(item.action_type === "rent"){
+hasRent = true;
+}
+
+box.innerHTML += `
+
+<div class="card">
+
+<div class="item">
+
+<img src="${
+item.image_url ||
+'https://via.placeholder.com/400x300'
+}" alt="">
+
+<div>
+
+<div class="name">
+${item.name || "Produto"}
+</div>
+
+<div class="desc">
+${item.description || ""}
+</div>
+
+<span class="tipo ${item.action_type}">
+${
+item.action_type === "rent"
+? "Aluguel"
+: "Compra"
+}
+</span>
+
+<div style="margin-top:10px">
+Quantidade:
+${item.quantity || 1}
+</div>
+
+</div>
+
+<div>
+
+<div class="price">
+R$ ${subtotal.toFixed(2)}
+</div>
+
+<button
+class="remove"
+onclick="removeItem(${item.id})">
+
+Remover
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+`;
+
+});
+
+totalBox.innerText =
+"R$ " + total.toFixed(2);
+
+rentArea.style.display =
+hasRent ? "block" : "none";
+
+}catch(error){
+
+console.error(error);
+
+document.getElementById("cart-list")
+.innerHTML = `
+<div class="card empty">
+Erro ao carregar carrinho
+</div>
+`;
+
+}
+
+}
+
+/* ======================================================
+REMOVE
+====================================================== */
+
+async function removeItem(id){
+
+try{
+
+await fetch("/cart/" + id,{
+
+method:"DELETE",
+
+credentials:"include"
+
+});
+
+loadCart();
+
+}catch(error){
+
+console.error(error);
+
+alert("Erro ao remover item");
+
+}
+
+}
+
+/* ======================================================
+CHECKOUT
+====================================================== */
+
+async function checkout(){
+
+try{
+
+const hasRent =
+cart.some(
+i => i.action_type === "rent"
+);
+
+const payload = {};
+
+if(hasRent){
+
+payload.start_date =
+document
+.getElementById("start_date")
+.value;
+
+payload.end_date =
+document
+.getElementById("end_date")
+.value;
+
+}
+
+const response = await fetch("/checkout",{
+
+method:"POST",
+
+credentials:"include",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify(payload)
+
+});
+
+const data =
+await response.json();
+
+alert(
+data.message ||
+"Resposta recebida"
+);
+
+if(data.success){
+
+window.location.href =
+"/orders.html";
+
+}
+
+}catch(error){
+
+console.error(error);
+
+alert(
+"Falha ao finalizar pedido."
+);
+
+}
+
+}
+
+/* ======================================================
+INIT
+====================================================== */
+
+(async()=>{
+
+await carregarUsuario();
+
+await loadCart();
+
+})();
+
+</script>
+
+</body>
+</html>

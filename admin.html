@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Admin Premium</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:Arial;
+background:#f5f5f5;
+}
+
+header{
+background:#111;
+color:#fff;
+padding:20px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+flex-wrap:wrap;
+gap:10px;
+}
+
+.logo{
+font-size:32px;
+font-weight:bold;
+}
+
+.menu{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+}
+
+.menu a{
+background:#222;
+color:#fff;
+padding:10px 14px;
+text-decoration:none;
+border-radius:10px;
+font-weight:bold;
+}
+
+.wrap{
+width:95%;
+max-width:1400px;
+margin:auto;
+padding:30px 0;
+}
+
+.hero{
+background:linear-gradient(90deg,#111,#333);
+color:#fff;
+padding:35px;
+border-radius:22px;
+margin-bottom:30px;
+}
+
+.hero h1{
+font-size:42px;
+margin-bottom:10px;
+}
+
+.form-card{
+background:#fff;
+padding:25px;
+border-radius:20px;
+margin-bottom:30px;
+box-shadow:0 5px 20px rgba(0,0,0,.08);
+}
+
+.form-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:15px;
+}
+
+input,
+textarea{
+width:100%;
+padding:14px;
+border:1px solid #ddd;
+border-radius:10px;
+font-size:15px;
+}
+
+textarea{
+min-height:120px;
+resize:none;
+}
+
+button{
+border:none;
+background:#111;
+color:#fff;
+padding:14px 22px;
+border-radius:10px;
+font-size:16px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+gap:20px;
+}
+
+.card{
+background:#fff;
+border-radius:18px;
+overflow:hidden;
+box-shadow:0 5px 20px rgba(0,0,0,.08);
+}
+
+.card img{
+width:100%;
+height:260px;
+object-fit:cover;
+background:#eee;
+}
+
+.content{
+padding:18px;
+}
+
+.title{
+font-size:22px;
+font-weight:bold;
+margin-bottom:10px;
+}
+
+.price{
+font-size:20px;
+font-weight:bold;
+margin-top:10px;
+}
+
+.stock{
+margin-top:10px;
+font-weight:bold;
+color:#555;
+}
+
+.remove{
+margin-top:15px;
+background:#d50000;
+width:100%;
+}
+
+@media(max-width:800px){
+
+.form-grid{
+grid-template-columns:1fr;
+}
+
+}
+
+</style>
+</head>
+<body>
+
+<header>
+
+<div class="logo">
+⚙️ Admin Premium
+</div>
+
+<div class="menu">
+<a href="/">Loja</a>
+<a href="/admin-orders.html">Pedidos</a>
+<a href="/admin-rentals.html">Aluguéis</a>
+<a href="/logout">Sair</a>
+</div>
+
+</header>
+
+<div class="wrap">
+
+<div class="hero">
+<h1>Cadastro de Produtos</h1>
+<p>
+Cadastre produtos com imagem do computador/celular.
+</p>
+</div>
+
+<div class="form-card">
+
+<form id="formProduto">
+
+<div class="form-grid">
+
+<input
+type="text"
+name="name"
+placeholder="Nome"
+required
+>
+
+<input
+type="number"
+step="0.01"
+name="price"
+placeholder="Preço"
+required
+>
+
+<input
+type="number"
+step="0.01"
+name="rental_price"
+placeholder="Preço aluguel"
+required
+>
+
+<input
+type="number"
+name="stock"
+placeholder="Estoque"
+required
+>
+
+</div>
+
+<br>
+
+<textarea
+name="description"
+placeholder="Descrição"
+></textarea>
+
+<br><br>
+
+<input
+type="file"
+name="image"
+accept="image/*"
+required
+>
+
+<br><br>
+
+<button type="submit">
+Cadastrar Produto
+</button>
+
+</form>
+
+</div>
+
+<div class="grid" id="lista"></div>
+
+</div>
+
+<script>
+
+async function validar(){
+
+const req = await fetch("/me");
+const user = await req.json();
+
+if(!user || user.role !== "admin"){
+location.href="/login.html";
+}
+
+}
+
+async function carregar(){
+
+const req = await fetch("/admin/products");
+const produtos = await req.json();
+
+const box =
+document.getElementById("lista");
+
+box.innerHTML = "";
+
+produtos.forEach(p=>{
+
+box.innerHTML += `
+<div class="card">
+
+<img src="${p.image_url || ''}">
+
+<div class="content">
+
+<div class="title">
+${p.name}
+</div>
+
+<div>
+${p.description || ""}
+</div>
+
+<div class="price">
+Venda:
+R$ ${Number(p.price).toFixed(2)}
+</div>
+
+<div class="price">
+Aluguel:
+R$ ${Number(p.rental_price).toFixed(2)}
+</div>
+
+<div class="stock">
+Estoque:
+${p.stock}
+</div>
+
+<button
+class="remove"
+onclick="remover(${p.id})"
+>
+Excluir
+</button>
+
+</div>
+</div>
+`;
+
+});
+
+}
+
+document
+.getElementById("formProduto")
+.addEventListener("submit",
+async(e)=>{
+
+e.preventDefault();
+
+const form =
+document.getElementById("formProduto");
+
+const data =
+new FormData(form);
+
+const req = await fetch(
+"/admin/products",
+{
+method:"POST",
+body:data
+});
+
+const res = await req.json();
+
+alert(res.message);
+
+form.reset();
+
+carregar();
+
+});
+
+async function remover(id){
+
+if(!confirm("Excluir produto?")){
+return;
+}
+
+await fetch(
+"/admin/products/" + id,
+{
+method:"DELETE"
+});
+
+carregar();
+
+}
+
+(async()=>{
+
+await validar();
+await carregar();
+
+})();
+
+</script>
+
+</body>
+</html>

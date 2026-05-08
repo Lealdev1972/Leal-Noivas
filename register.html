@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Criar Conta</title>
+
+<style>
+body{
+font-family:Arial;
+background:#f8f5f2;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+margin:0;
+}
+
+.box{
+background:white;
+padding:35px;
+border-radius:14px;
+width:360px;
+box-shadow:0 6px 18px rgba(0,0,0,.08);
+}
+
+h1{
+margin-bottom:20px;
+font-size:28px;
+text-align:center;
+color:#b48b5e;
+}
+
+input{
+width:100%;
+padding:12px;
+margin-bottom:12px;
+border:1px solid #ddd;
+border-radius:8px;
+}
+
+button{
+width:100%;
+padding:12px;
+border:none;
+background:#b48b5e;
+color:white;
+font-weight:bold;
+border-radius:8px;
+cursor:pointer;
+}
+
+a{
+display:block;
+margin-top:15px;
+text-align:center;
+color:#555;
+text-decoration:none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+<h1>Criar Conta</h1>
+
+<form action="/register" method="POST">
+<input name="name" placeholder="Nome" required>
+<input name="email" type="email" placeholder="E-mail" required>
+<input name="password" type="password" placeholder="Senha" required>
+<button>Cadastrar</button>
+</form>
+
+<a href="/login.html">Já tenho conta</a>
+</div>
+
+</body>
+</html>

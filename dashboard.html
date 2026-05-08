@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard Financeiro</title>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:Arial,Helvetica,sans-serif;
+background:#f4f4f4;
+padding:30px;
+color:#222;
+}
+
+.container{
+max-width:1400px;
+margin:auto;
+}
+
+.topo{
+display:flex;
+justify-content:space-between;
+align-items:center;
+gap:15px;
+flex-wrap:wrap;
+margin-bottom:25px;
+}
+
+h1{
+font-size:32px;
+}
+
+.menu{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+}
+
+.menu a{
+text-decoration:none;
+background:#111;
+color:#fff;
+padding:10px 16px;
+border-radius:8px;
+font-size:14px;
+}
+
+.cards{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:18px;
+margin-bottom:25px;
+}
+
+.card{
+background:#fff;
+padding:22px;
+border-radius:16px;
+box-shadow:0 8px 22px rgba(0,0,0,.08);
+}
+
+.card span{
+display:block;
+font-size:14px;
+color:#666;
+margin-bottom:8px;
+}
+
+.card strong{
+font-size:30px;
+}
+
+.grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:20px;
+}
+
+.box{
+background:#fff;
+padding:22px;
+border-radius:16px;
+box-shadow:0 8px 22px rgba(0,0,0,.08);
+}
+
+.box h2{
+font-size:22px;
+margin-bottom:18px;
+}
+
+.linha{
+display:flex;
+justify-content:space-between;
+padding:12px 0;
+border-bottom:1px solid #eee;
+font-size:15px;
+gap:15px;
+}
+
+canvas{
+margin-top:15px;
+width:100%;
+max-width:100%;
+height:320px;
+}
+
+@media(max-width:1000px){
+.grid{
+grid-template-columns:1fr;
+}
+}
+
+@media(max-width:700px){
+
+body{
+padding:15px;
+}
+
+h1{
+font-size:26px;
+}
+
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<div class="topo">
+
+<h1>Dashboard Financeiro</h1>
+
+<div class="menu">
+<a href="/admin.html">Produtos</a>
+<a href="/admin-orders.html">Pedidos</a>
+<a href="/admin-rentals.html">Aluguéis</a>
+<a href="/">Loja</a>
+<a href="/logout">Sair</a>
+</div>
+
+</div>
+
+<div class="cards">
+
+<div class="card">
+<span>Faturamento Total</span>
+<strong id="fatTotal">R$ 0</strong>
+</div>
+
+<div class="card">
+<span>Pedidos Totais</span>
+<strong id="pedidosTotal">0</strong>
+</div>
+
+<div class="card">
+<span>Pedidos no Mês</span>
+<strong id="mesTotal">0</strong>
+</div>
+
+<div class="card">
+<span>Aluguéis Ativos</span>
+<strong id="aluguaisAtivos">0</strong>
+</div>
+
+</div>
+
+<div class="grid">
+
+<div class="box">
+
+<h2>Produtos Mais Vendidos / Alugados</h2>
+
+<div id="produtos"></div>
+
+</div>
+
+<div class="box">
+
+<h2>Melhores Clientes</h2>
+
+<div id="clientes"></div>
+
+</div>
+
+<div class="box" style="grid-column:1 / -1;">
+
+<h2>Faturamento Últimos 6 Meses</h2>
+
+<canvas id="grafico"></canvas>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+let pedidos = [];
+let rentals = [];
+
+async function iniciar(){
+await verificarAdmin();
+await carregarDados();
+montarDashboard();
+}
+
+async function verificarAdmin(){
+
+const res = await fetch("/me");
+const user = await res.json();
+
+if(!user || user.role !== "admin"){
+location.href="/";
+}
+
+}
+
+async function carregarDados(){
+
+const r1 = await fetch("/admin/orders");
+pedidos = await r1.json();
+
+const r2 = await fetch("/admin/rentals");
+rentals = await r2.json();
+
+}
+
+function montarDashboard(){
+
+const total = pedidos.reduce((s,p)=>
+s + Number(p.total),0);
+
+document.getElementById("fatTotal").innerText =
+money(total);
+
+document.getElementById("pedidosTotal").innerText =
+pedidos.length;
+
+const hoje = new Date();
+
+const pedidosMes = pedidos.filter(p=>{
+
+const d = new Date(p.created_at);
+
+return d.getMonth()===hoje.getMonth()
+&& d.getFullYear()===hoje.getFullYear();
+
+}).length;
+
+document.getElementById("mesTotal").innerText =
+pedidosMes;
+
+const ativos = rentals.filter(r=>
+r.status==="Reservado" ||
+r.status==="Retirado"
+).length;
+
+document.getElementById("aluguaisAtivos").innerText =
+ativos;
+
+topProdutos();
+topClientes();
+grafico();
+
+}
+
+async function topProdutos(){
+
+const caixa = document.getElementById("produtos");
+
+let mapa = {};
+
+for(const p of pedidos){
+
+const res = await fetch("/admin/order-items/"+p.id);
+const itens = await res.json();
+
+itens.forEach(i=>{
+
+if(!mapa[i.product_name]){
+mapa[i.product_name]=0;
+}
+
+mapa[i.product_name]+=Number(i.quantity);
+
+});
+
+}
+
+const lista = Object.entries(mapa)
+.sort((a,b)=>b[1]-a[1])
+.slice(0,8);
+
+let html="";
+
+lista.forEach(i=>{
+html += `
+<div class="linha">
+<span>${i[0]}</span>
+<strong>${i[1]}</strong>
+</div>
+`;
+});
+
+caixa.innerHTML = html || "Sem dados";
+
+}
+
+function topClientes(){
+
+const caixa = document.getElementById("clientes");
+
+let mapa = {};
+
+pedidos.forEach(p=>{
+
+if(!mapa[p.email]){
+mapa[p.email]={
+nome:p.name,
+valor:0
+};
+}
+
+mapa[p.email].valor += Number(p.total);
+
+});
+
+const lista = Object.values(mapa)
+.sort((a,b)=>b.valor-a.valor)
+.slice(0,8);
+
+let html="";
+
+lista.forEach(c=>{
+
+html += `
+<div class="linha">
+<span>${c.nome}</span>
+<strong>${money(c.valor)}</strong>
+</div>
+`;
+
+});
+
+caixa.innerHTML = html || "Sem dados";
+
+}
+
+function grafico(){
+
+const canvas =
+document.getElementById("grafico");
+
+const ctx = canvas.getContext("2d");
+
+canvas.width = canvas.offsetWidth;
+canvas.height = 320;
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+let meses = [];
+let valores = [];
+
+for(let i=5;i>=0;i--){
+
+const d = new Date();
+d.setMonth(d.getMonth()-i);
+
+const m = d.getMonth();
+const a = d.getFullYear();
+
+meses.push(
+(d.getMonth()+1)+"/"+String(a).slice(-2)
+);
+
+let soma = 0;
+
+pedidos.forEach(p=>{
+
+const pd = new Date(p.created_at);
+
+if(pd.getMonth()===m &&
+pd.getFullYear()===a){
+soma += Number(p.total);
+}
+
+});
+
+valores.push(soma);
+
+}
+
+const max = Math.max(...valores,1);
+
+const w = canvas.width;
+const h = canvas.height;
+
+const margem = 40;
+const passo = (w-margem*2)/(valores.length-1);
+
+ctx.beginPath();
+
+valores.forEach((v,i)=>{
+
+const x = margem + passo*i;
+const y = h - margem - ((v/max)*(h-90));
+
+if(i===0) ctx.moveTo(x,y);
+else ctx.lineTo(x,y);
+
+});
+
+ctx.lineWidth = 3;
+ctx.stroke();
+
+valores.forEach((v,i)=>{
+
+const x = margem + passo*i;
+const y = h - margem - ((v/max)*(h-90));
+
+ctx.beginPath();
+ctx.arc(x,y,5,0,Math.PI*2);
+ctx.fill();
+
+ctx.fillText(
+meses[i],
+x-12,
+h-15
+);
+
+ctx.fillText(
+Math.round(v),
+x-10,
+y-10
+);
+
+});
+
+}
+
+function money(v){
+return "R$ "+Number(v).toFixed(2);
+}
+
+iniciar();
+
+</script>
+
+</body>
+</html>

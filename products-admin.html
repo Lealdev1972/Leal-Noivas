@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Produtos Admin</title>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:Arial,Helvetica,sans-serif;
+background:#f5f5f5;
+color:#111;
+}
+
+header{
+background:#111;
+color:#fff;
+padding:20px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+flex-wrap:wrap;
+gap:10px;
+}
+
+.logo{
+font-size:26px;
+font-weight:bold;
+}
+
+.menu{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+}
+
+.menu a{
+background:#222;
+color:#fff;
+padding:10px 14px;
+border-radius:10px;
+text-decoration:none;
+font-size:14px;
+}
+
+.container{
+width:95%;
+max-width:1400px;
+margin:auto;
+padding:30px 0;
+}
+
+.form{
+background:#fff;
+padding:24px;
+border-radius:18px;
+margin-bottom:30px;
+box-shadow:0 6px 20px rgba(0,0,0,.08);
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
+gap:16px;
+}
+
+input,textarea{
+width:100%;
+padding:14px;
+border:1px solid #ccc;
+border-radius:10px;
+font-size:14px;
+}
+
+textarea{
+min-height:120px;
+}
+
+button{
+border:none;
+padding:14px 20px;
+border-radius:10px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.save{
+background:#111;
+color:#fff;
+margin-top:20px;
+}
+
+.products{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+gap:20px;
+}
+
+.card{
+background:#fff;
+border-radius:18px;
+overflow:hidden;
+box-shadow:0 6px 20px rgba(0,0,0,.08);
+}
+
+.card img{
+width:100%;
+height:260px;
+object-fit:cover;
+background:#eee;
+}
+
+.content{
+padding:20px;
+}
+
+.actions{
+display:flex;
+gap:10px;
+margin-top:20px;
+}
+
+.edit{
+background:#1565c0;
+color:#fff;
+flex:1;
+}
+
+.delete{
+background:#c62828;
+color:#fff;
+flex:1;
+}
+</style>
+</head>
+<body>
+
+<header>
+
+<div class="logo">
+📦 Produtos Admin
+</div>
+
+<div class="menu">
+<a href="/admin.html">Dashboard</a>
+<a href="/admin-orders.html">Pedidos</a>
+<a href="/admin-rentals.html">Aluguéis</a>
+<a href="/">Loja</a>
+<a href="/logout">Sair</a>
+</div>
+
+</header>
+
+<div class="container">
+
+<div class="form">
+
+<h2>Cadastrar Produto</h2>
+
+<div class="grid">
+
+<input type="text" id="name" placeholder="Nome">
+
+<input type="number" id="price" placeholder="Preço">
+
+<input type="number" id="rental_price" placeholder="Preço aluguel">
+
+<input type="number" id="stock" placeholder="Estoque">
+
+<input type="file" id="image">
+
+</div>
+
+<br>
+
+<textarea
+id="description"
+placeholder="Descrição">
+</textarea>
+
+<button class="save" onclick="salvar()">
+Salvar Produto
+</button>
+
+</div>
+
+<div class="products" id="lista"></div>
+
+</div>
+
+<script>
+
+let editando = null;
+
+async function carregar(){
+
+const res =
+await fetch("/admin/products");
+
+const produtos =
+await res.json();
+
+const box =
+document.getElementById("lista");
+
+box.innerHTML = produtos.map(p=>`
+
+<div class="card">
+
+<img src="${p.image_url || ''}">
+
+<div class="content">
+
+<h3>${p.name}</h3>
+
+<p>${p.description || ''}</p>
+
+<br>
+
+<strong>
+Venda:
+R$ ${Number(p.price).toFixed(2)}
+</strong>
+
+<br><br>
+
+<strong>
+Aluguel:
+R$ ${Number(p.rental_price).toFixed(2)}
+</strong>
+
+<br><br>
+
+<strong>
+Estoque:
+${p.stock}
+</strong>
+
+<div class="actions">
+
+<button
+class="edit"
+onclick='editar(${JSON.stringify(p)})'>
+Editar
+</button>
+
+<button
+class="delete"
+onclick='remover(${p.id})'>
+Excluir
+</button>
+
+</div>
+
+</div>
+</div>
+
+`).join("");
+
+}
+
+function editar(p){
+
+editando = p.id;
+
+document.getElementById("name").value =
+p.name;
+
+document.getElementById("description").value =
+p.description;
+
+document.getElementById("price").value =
+p.price;
+
+document.getElementById("rental_price").value =
+p.rental_price;
+
+document.getElementById("stock").value =
+p.stock;
+
+window.scrollTo({
+top:0,
+behavior:"smooth"
+});
+
+}
+
+async function salvar(){
+
+const formData = new FormData();
+
+formData.append(
+"name",
+document.getElementById("name").value
+);
+
+formData.append(
+"description",
+document.getElementById("description").value
+);
+
+formData.append(
+"price",
+document.getElementById("price").value
+);
+
+formData.append(
+"rental_price",
+document.getElementById("rental_price").value
+);
+
+formData.append(
+"stock",
+document.getElementById("stock").value
+);
+
+const image =
+document.getElementById("image").files[0];
+
+if(image){
+
+formData.append(
+"image",
+image
+);
+
+}
+
+let url = "/admin/products";
+let method = "POST";
+
+if(editando){
+
+url += "/" + editando;
+method = "PUT";
+
+}
+
+const res = await fetch(url,{
+method,
+body:formData
+});
+
+const data = await res.json();
+
+alert(data.message);
+
+editando = null;
+
+document.getElementById("image").value = "";
+
+carregar();
+
+}
+
+async function remover(id){
+
+if(!confirm("Excluir produto?")){
+return;
+}
+
+const res =
+await fetch("/admin/products/"+id,{
+method:"DELETE"
+});
+
+const data = await res.json();
+
+alert(data.message);
+
+carregar();
+
+}
+
+carregar();
+
+</script>
+
+</body>
+</html>

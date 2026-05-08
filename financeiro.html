@@ -1,0 +1,192 @@
+<!-- public/financeiro.html -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Financeiro Premium</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,Helvetica,sans-serif;background:#f5f6fa;color:#111}
+header{
+background:#111;color:#fff;padding:18px 24px;
+display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px
+}
+.logo{font-size:24px;font-weight:700}
+nav{display:flex;gap:10px;flex-wrap:wrap}
+nav a{
+text-decoration:none;color:#fff;background:#222;
+padding:10px 14px;border-radius:10px;font-weight:700;font-size:14px
+}
+nav a:hover{background:#fff;color:#111}
+.wrap{max-width:1300px;margin:auto;padding:28px 18px}
+.hero{
+background:linear-gradient(135deg,#111,#333);
+color:#fff;padding:28px;border-radius:20px;margin-bottom:24px
+}
+.hero h1{font-size:32px;margin-bottom:8px}
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+gap:18px;margin-bottom:24px
+}
+.card{
+background:#fff;padding:20px;border-radius:18px;
+box-shadow:0 10px 24px rgba(0,0,0,.06)
+}
+.label{font-size:14px;color:#666;margin-bottom:8px}
+.value{font-size:32px;font-weight:800}
+.panel{
+background:#fff;padding:20px;border-radius:18px;
+box-shadow:0 10px 24px rgba(0,0,0,.06)
+}
+table{width:100%;border-collapse:collapse}
+th,td{
+padding:12px;text-align:left;
+border-bottom:1px solid #eee;font-size:14px
+}
+th{background:#fafafa}
+</style>
+</head>
+<body>
+
+<header>
+<div class="logo">💰 Financeiro</div>
+<nav>
+<a href="/dashboard.html">📊 Dashboard</a>
+<a href="/">🏠 Loja</a>
+<a href="/logout">🚪 Sair</a>
+</nav>
+</header>
+
+<div class="wrap">
+
+<section class="hero">
+<h1>Resumo Financeiro</h1>
+<p>Receitas de vendas e locações.</p>
+</section>
+
+<section class="grid">
+
+<div class="card">
+<div class="label">Receita Total</div>
+<div class="value" id="receitaTotal">R$ 0</div>
+</div>
+
+<div class="card">
+<div class="label">Pedidos</div>
+<div class="value" id="qtdPedidos">0</div>
+</div>
+
+<div class="card">
+<div class="label">Locações</div>
+<div class="value" id="qtdRentals">0</div>
+</div>
+
+<div class="card">
+<div class="label">Ticket Médio</div>
+<div class="value" id="ticket">R$ 0</div>
+</div>
+
+</section>
+
+<section class="panel">
+<h2 style="margin-bottom:16px;">Últimas Locações</h2>
+
+<div style="overflow:auto;">
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Produto</th>
+<th>Cliente</th>
+<th>Total</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody id="tbodyRentals">
+<tr><td colspan="5">Carregando...</td></tr>
+</tbody>
+</table>
+</div>
+
+</section>
+
+</div>
+
+<script>
+async function carregar(){
+
+try{
+
+const req1 = await fetch("/admin/orders");
+const pedidos = await req1.json();
+
+const req2 = await fetch("/admin/rentals");
+const rentals = await req2.json();
+
+if(!Array.isArray(pedidos)){
+location.href="/login.html";
+return;
+}
+
+let total = 0;
+
+pedidos.forEach(p=>{
+total += Number(p.total || 0);
+});
+
+let totalRent = 0;
+
+if(Array.isArray(rentals)){
+rentals.forEach(r=>{
+totalRent += Number(r.total || 0);
+});
+}
+
+const qtdPedidos = pedidos.length;
+const qtdRentals = Array.isArray(rentals)
+? rentals.length : 0;
+
+document.getElementById("receitaTotal").innerText =
+"R$ " + total.toFixed(2);
+
+document.getElementById("qtdPedidos").innerText =
+qtdPedidos;
+
+document.getElementById("qtdRentals").innerText =
+qtdRentals;
+
+const ticket =
+qtdPedidos > 0 ? total / qtdPedidos : 0;
+
+document.getElementById("ticket").innerText =
+"R$ " + ticket.toFixed(2);
+
+const body =
+document.getElementById("tbodyRentals");
+
+body.innerHTML =
+Array.isArray(rentals) && rentals.length
+? rentals.slice(0,10).map(r=>`
+<tr>
+<td>${r.id}</td>
+<td>${r.product_name || "-"}</td>
+<td>${r.name || "-"}</td>
+<td>R$ ${Number(r.total).toFixed(2)}</td>
+<td>${r.status}</td>
+</tr>
+`).join("")
+:
+`<tr><td colspan="5">Nenhuma locação</td></tr>`;
+
+}catch(e){
+location.href="/login.html";
+}
+}
+
+carregar();
+</script>
+
+</body>
+</html>

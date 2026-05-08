@@ -1,0 +1,339 @@
+<!-- public/login.html -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width,initial-scale=1.0">
+
+<title>Login Premium</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:Arial,Helvetica,sans-serif;
+min-height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+background:
+linear-gradient(135deg,#111,#2a2a2a,#444);
+padding:20px;
+}
+
+.card{
+width:100%;
+max-width:430px;
+background:#fff;
+border-radius:24px;
+padding:34px;
+box-shadow:0 20px 45px rgba(0,0,0,.25);
+}
+
+.logo{
+font-size:34px;
+font-weight:800;
+text-align:center;
+margin-bottom:8px;
+}
+
+.sub{
+text-align:center;
+color:#666;
+font-size:14px;
+margin-bottom:26px;
+}
+
+.group{
+margin-bottom:18px;
+}
+
+label{
+display:block;
+font-size:14px;
+font-weight:700;
+margin-bottom:7px;
+color:#222;
+}
+
+input{
+width:100%;
+padding:14px;
+border:1px solid #ddd;
+border-radius:12px;
+font-size:15px;
+outline:none;
+transition:.2s;
+}
+
+input:focus{
+border-color:#111;
+}
+
+button{
+width:100%;
+border:none;
+background:#111;
+color:#fff;
+padding:14px;
+border-radius:12px;
+font-size:16px;
+font-weight:800;
+cursor:pointer;
+transition:.2s;
+}
+
+button:hover{
+transform:translateY(-1px);
+}
+
+.extra{
+margin-top:18px;
+text-align:center;
+font-size:14px;
+}
+
+.extra a{
+text-decoration:none;
+font-weight:700;
+color:#111;
+}
+
+.toast{
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:#111;
+color:#fff;
+padding:16px 24px;
+border-radius:14px;
+font-weight:700;
+opacity:0;
+pointer-events:none;
+transition:.25s;
+z-index:9999;
+box-shadow:0 14px 28px rgba(0,0,0,.28);
+}
+
+.toast.show{
+opacity:1;
+}
+
+.demo{
+margin-top:20px;
+background:#f7f7f7;
+padding:14px;
+border-radius:14px;
+font-size:13px;
+color:#555;
+line-height:1.6;
+}
+
+@media(max-width:500px){
+
+.card{
+padding:26px;
+}
+
+.logo{
+font-size:28px;
+}
+
+}
+
+</style>
+</head>
+<body>
+
+<div class="card">
+
+<div class="logo">
+🔐 Login
+</div>
+
+<div class="sub">
+Acesse sua conta premium
+</div>
+
+<form id="formLogin">
+
+<div class="group">
+
+<label>E-mail</label>
+
+<input
+type="email"
+id="email"
+placeholder="Digite seu e-mail"
+required>
+
+</div>
+
+<div class="group">
+
+<label>Senha</label>
+
+<input
+type="password"
+id="password"
+placeholder="Digite sua senha"
+required>
+
+</div>
+
+<button type="submit">
+Entrar
+</button>
+
+</form>
+
+<div class="extra">
+<a href="/">← Voltar para loja</a>
+</div>
+
+<div class="demo">
+
+<strong>
+Acesso administrador:
+</strong>
+
+<br>
+
+Use o e-mail e senha cadastrados no banco de dados.
+
+</div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+
+/* ======================================================
+TOAST
+====================================================== */
+
+function toast(msg){
+
+const t =
+document.getElementById("toast");
+
+t.innerText = msg;
+
+t.classList.add("show");
+
+setTimeout(()=>{
+
+t.classList.remove("show");
+
+},1800);
+
+}
+
+/* ======================================================
+LOGIN
+====================================================== */
+
+async function entrar(e){
+
+e.preventDefault();
+
+const email =
+document.getElementById("email")
+.value
+.trim();
+
+const password =
+document.getElementById("password")
+.value;
+
+if(!email || !password){
+
+toast("Preencha todos os campos");
+
+return;
+
+}
+
+try{
+
+const req = await fetch("/login",{
+
+method:"POST",
+
+credentials:"include",
+
+headers:{
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+email,
+password
+})
+
+});
+
+const res = await req.json();
+
+console.log("LOGIN:",res);
+
+if(res.success){
+
+toast("Login realizado");
+
+setTimeout(()=>{
+
+if(res.role === "admin"){
+
+location.href =
+"/dashboard.html";
+
+}else{
+
+location.href = "/";
+
+}
+
+},900);
+
+}else{
+
+toast(
+res.message ||
+"Login inválido"
+);
+
+}
+
+}catch(error){
+
+console.error(error);
+
+toast("Erro ao conectar");
+
+}
+
+}
+
+/* ======================================================
+INIT
+====================================================== */
+
+document
+.getElementById("formLogin")
+.addEventListener("submit", entrar);
+
+</script>
+
+</body>
+</html>
