@@ -1,0 +1,367 @@
+<!-- public/index.html -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Leal Noivas</title>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+font-family:Arial,Helvetica,sans-serif;
+background:#f5f6fa;
+color:#111;
+}
+header{
+background:#111;
+color:#fff;
+padding:18px 24px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+flex-wrap:wrap;
+gap:12px;
+}
+.logo{
+font-size:28px;
+font-weight:800;
+}
+nav{
+display:flex;
+gap:10px;
+flex-wrap:wrap;
+}
+nav a, nav button{
+border:none;
+text-decoration:none;
+background:#222;
+color:#fff;
+padding:10px 14px;
+border-radius:10px;
+font-size:14px;
+font-weight:700;
+cursor:pointer;
+transition:.2s;
+}
+nav a:hover, nav button:hover{
+background:#fff;
+color:#111;
+}
+.wrap{
+max-width:1300px;
+margin:auto;
+padding:28px 18px 60px;
+}
+.hero{
+background:linear-gradient(135deg,#111,#333);
+color:#fff;
+padding:34px;
+border-radius:24px;
+margin-bottom:28px;
+}
+.hero h1{
+font-size:36px;
+margin-bottom:10px;
+}
+.hero p{
+opacity:.92;
+font-size:16px;
+}
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+gap:20px;
+}
+.card{
+background:#fff;
+border-radius:20px;
+overflow:hidden;
+box-shadow:0 12px 24px rgba(0,0,0,.06);
+display:flex;
+flex-direction:column;
+}
+.card img{
+width:100%;
+height:260px;
+object-fit:cover;
+background:#eee;
+}
+.content{
+padding:18px;
+display:flex;
+flex-direction:column;
+height:100%;
+}
+.title{
+font-size:20px;
+font-weight:800;
+margin-bottom:8px;
+}
+.desc{
+font-size:14px;
+color:#555;
+line-height:1.5;
+margin-bottom:14px;
+min-height:44px;
+}
+.price{
+font-size:20px;
+font-weight:800;
+margin-bottom:6px;
+}
+.rent{
+font-size:15px;
+font-weight:700;
+color:#555;
+margin-bottom:16px;
+}
+.actions{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+margin-top:auto;
+}
+.btn{
+border:none;
+padding:12px;
+border-radius:12px;
+font-weight:700;
+cursor:pointer;
+transition:.2s;
+}
+.buy{
+background:#111;
+color:#fff;
+}
+.rental{
+background:#eceef3;
+color:#111;
+}
+.buy:hover,.rental:hover{
+transform:translateY(-1px);
+}
+.toast{
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:#FFD700;
+color:#fff;
+padding:16px 24px;
+border-radius:14px;
+font-weight:700;
+opacity:0;
+pointer-events:none;
+transition:.25s;
+z-index:9999;
+box-shadow:0 14px 28px rgba(0,0,0,.28);
+}
+.toast.show{
+opacity:1;
+}
+.hidden{
+display:none!important;
+}
+@media(max-width:700px){
+.hero h1{font-size:28px}
+.actions{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+
+<div class="logo"> Leal Noivas</div>
+
+<nav id="menu">
+<a href="/cart.html">🛒 Carrinho</a>
+<a href="/orders.html">📦 Pedidos</a>
+<a href="/login.html" id="btnLogin">🔐 Login</a>
+<a href="/logout" id="btnLogout" class="hidden">🚪 Sair</a>
+
+<!-- admin -->
+<a href="/dashboard.html" id="btnDash" class="hidden">📊 Dashboard</a>
+<a href="/financeiro.html" id="btnFin" class="hidden">💰 Financeiro</a>
+</nav>
+
+</header>
+
+<div class="wrap">
+
+<section class="hero">
+<h1>Elegância para momentos únicos</h1>
+<p>Venda e locação de vestidos, smokings e acessórios premium.</p>
+</section>
+
+<section class="grid" id="produtos">
+<div>Carregando produtos...</div>
+</section>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let usuario = null;
+
+/* =========================
+TOAST
+========================= */
+function toast(msg){
+const t = document.getElementById("toast");
+t.innerText = msg;
+t.classList.add("show");
+
+setTimeout(()=>{
+t.classList.remove("show");
+},1800);
+}
+
+/* =========================
+USUÁRIO
+========================= */
+async function carregarUsuario(){
+
+try{
+
+const req = await fetch("/me");
+const res = await req.json();
+
+usuario = res;
+
+if(usuario){
+
+document.getElementById("btnLogin")
+.classList.add("hidden");
+
+document.getElementById("btnLogout")
+.classList.remove("hidden");
+
+if(usuario.role === "admin"){
+document.getElementById("btnDash")
+.classList.remove("hidden");
+
+document.getElementById("btnFin")
+.classList.remove("hidden");
+}
+
+}
+
+}catch(e){}
+}
+
+/* =========================
+PRODUTOS
+========================= */
+async function carregarProdutos(){
+
+try{
+
+const req = await fetch("/products");
+const dados = await req.json();
+
+const box = document.getElementById("produtos");
+
+if(!Array.isArray(dados) || !dados.length){
+box.innerHTML = "<div>Nenhum produto encontrado</div>";
+return;
+}
+
+box.innerHTML = dados.map(p=>`
+
+<div class="card">
+
+<img src="${
+p.image_url || 'https://via.placeholder.com/400x300'
+}">
+
+<div class="content">
+
+<div class="title">${p.name}</div>
+
+<div class="desc">
+${p.description || ""}
+</div>
+
+<div class="price">
+R$ ${Number(p.price || 0).toFixed(2)}
+</div>
+
+<div class="rent">
+Aluguel: R$ ${Number(p.rental_price || 0).toFixed(2)}
+</div>
+
+<div class="actions">
+
+<button
+class="btn buy"
+onclick="adicionar(${p.id},'buy')">
+🛒 Comprar
+</button>
+
+<button
+class="btn rental"
+onclick="adicionar(${p.id},'rent')">
+📅 Alugar
+</button>
+
+</div>
+
+</div>
+</div>
+
+`).join("");
+
+}catch(e){
+document.getElementById("produtos").innerHTML =
+"<div>Erro ao carregar produtos</div>";
+}
+}
+
+/* =========================
+ADD CARRINHO
+========================= */
+async function adicionar(id,tipo){
+
+try{
+
+const req = await fetch("/cart",{
+method:"POST",
+headers:{
+"Content-Type":"application/json"
+},
+body:JSON.stringify({
+product_id:id,
+action_type:tipo
+})
+});
+
+const res = await req.json();
+
+if(res.success){
+toast("Adicionado ao carrinho");
+}else{
+toast(res.message || "Faça login");
+setTimeout(()=>{
+location.href="/login.html";
+},1000);
+}
+
+}catch(e){
+toast("Erro ao adicionar");
+}
+}
+
+/* =========================
+INIT
+========================= */
+(async()=>{
+await carregarUsuario();
+await carregarProdutos();
+})();
+</script>
+
+</body>
+</html>
